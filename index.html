@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Logic Calculator</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#800000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Logic Calc">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Roboto Mono',monospace; }
+
+        html, body {
+            height: 100%;
+            overscroll-behavior: none;
+        }
+
+        body {
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(180,0,0,0.6) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(100,0,0,0.8) 0%, transparent 60%),
+                linear-gradient(160deg, #6b0000 0%, #800000 40%, #5a0000 100%);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px);
+        }
+
+        /* ── App Header ── */
+        .app-header {
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .app-title-top {
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: rgba(255, 220, 200, 0.7);
+            margin-bottom: 6px;
+        }
+
+        .app-title-main {
+            font-family: 'Cinzel', serif;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #ffffff 0%, #ffcccc 40%, #ffffff 60%, #ffe0d0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            line-height: 1.2;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+        }
+
+        .app-title-sub {
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: rgba(255, 220, 200, 0.7);
+            margin-top: 6px;
+        }
+
+        .title-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .title-divider-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(255,200,180,0.6), transparent);
+        }
+        .title-divider-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(255, 200, 180, 0.8);
+        }
+
+        /* ── Calculator Card ── */
+        .calculator {
+            background: linear-gradient(160deg, #8a0000 0%, #700000 50%, #5c0000 100%);
+            border-radius: 28px;
+            box-shadow:
+                0 24px 60px rgba(0,0,0,0.6),
+                0 8px 20px rgba(0,0,0,0.3),
+                inset 0 2px 0 rgba(255,255,255,0.2),
+                inset 0 -2px 0 rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 450px;
+            padding: 28px;
+            border: 1px solid rgba(255,160,120,0.15);
+        }
+
+        /* ── Display ── */
+        .display {
+            background: #5c0000;
+            border-radius: 14px;
+            padding: 20px 18px;
+            margin-bottom: 22px;
+            box-shadow: inset 0 4px 12px rgba(0,0,0,0.55), 0 1px 3px rgba(255,255,255,0.05);
+            color: #ffffff;
+            text-align: right;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            word-wrap: break-word;
+            word-break: break-all;
+            position: relative;
+        }
+        .display-label {
+            position: absolute;
+            top: 10px;
+            left: 14px;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.35);
+            text-transform: uppercase;
+        }
+        .display-input  { font-size: 17px; opacity: 0.75; min-height: 26px; padding-top: 14px; }
+        .display-result { font-size: 28px; font-weight: bold; }
+
+        /* ── Keypad ── */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        /* ── Keys ── */
+        .key {
+            background: linear-gradient(175deg, #ffffff 0%, #f8f0f0 50%, #f0e8e8 100%);
+            border: none;
+            border-radius: 14px;
+            color: #7a0000;
+            font-size: 16px;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 800;
+            padding: 24px 8px;
+            cursor: pointer;
+            box-shadow:
+                0 6px 0 #a07070,
+                0 8px 18px rgba(0,0,0,0.5),
+                0 2px 6px rgba(100,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.9);
+            transition: all 0.08s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            letter-spacing: 0.5px;
+        }
+        .key:hover {
+            background: linear-gradient(175deg, #fff5f5 0%, #f5e8e8 100%);
+            box-shadow: 0 6px 0 #a07070, 0 12px 22px rgba(0,0,0,0.55), 0 2px 6px rgba(100,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        .key:active {
+            box-shadow: 0 1px 0 #a07070, 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.9);
+            transform: translateY(5px);
+        }
+
+        /* All key variants → warm white */
+        .key-var, .key-value, .key-operator, .key-clear, .key-equals {
+            background: linear-gradient(175deg, #ffffff 0%, #f8f0f0 50%, #f0e8e8 100%);
+            color: #7a0000;
+        }
+        .key-var:hover, .key-value:hover, .key-operator:hover,
+        .key-clear:hover, .key-equals:hover {
+            background: linear-gradient(175deg, #fff5f5 0%, #f5e8e8 100%);
+        }
+
+        .key-truth {
+            grid-column: span 4;
+            background: linear-gradient(175deg, #ffffff 0%, #f8f0f0 50%, #f0e8e8 100%);
+            color: #7a0000;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+        }
+        .key-truth:hover { background: linear-gradient(175deg, #fff5f5 0%, #f5e8e8 100%); }
+
+        /* ── Section dividers ── */
+        .key-row-label {
+            grid-column: span 4;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.4);
+            text-align: left;
+            padding: 4px 2px 0;
+            text-transform: uppercase;
+        }
+
+        /* ── Install Banner ── */
+        .install-banner {
+            display: none;
+            width: 100%;
+            max-width: 450px;
+            margin-top: 14px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .install-banner.hidden { display: none !important; }
+        .install-text { color: rgba(255,255,255,0.85); font-size: 12px; }
+        .install-btn {
+            background: #ffffff;
+            color: #800000;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: 'Roboto Mono', monospace;
+        }
+        .install-dismiss {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+
+        /* ── Modal ── */
+        .modal {
+            display: none;
+            position: fixed;
+            top:0; left:0;
+            width:100%; height:100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 20px;
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+        .modal-content {
+            background: #2d0000;
+            border-radius: 18px;
+            padding: 28px;
+            max-width: 95vw;
+            width: 100%;
+            max-height: 88vh;
+            overflow: auto;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+            color: #ffffff;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+        .modal-header h2 {
+            font-size: 15px;
+            color: #ffcccc;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+        .close-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #ffffff;
+            font-size: 20px;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-left: 12px;
+            border-radius: 8px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .table-wrap { overflow-x: auto; }
+        .truth-table { border-collapse: collapse; margin-top: 14px; }
+        .truth-table th, .truth-table td {
+            padding: 10px 14px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.12);
+            white-space: nowrap;
+        }
+        .truth-table th { background: #1a0000; color: #ffcccc; font-size: 13px; }
+        .truth-table tr:nth-child(even) td { background: rgba(255,255,255,0.04); }
+
+        .cell-t { color: #66ff99; font-weight: bold; }
+        .cell-f { color: #ff6666; font-weight: bold; }
+        .final-col-th { color: #ffe066 !important; border-left: 3px solid rgba(255,255,255,0.4) !important; }
+        .final-col-td { border-left: 3px solid rgba(255,255,255,0.4) !important; font-size: 15px; font-weight: bold; }
+
+        /* ── Responsive ── */
+        @media (max-width: 380px) {
+            .calculator { padding: 18px; }
+            .key { font-size: 14px; padding: 15px 6px; }
+            .display-result { font-size: 24px; }
+        }
+
+        @media (min-height: 750px) {
+            .keypad { gap: 14px; }
+            .key { padding: 20px 8px; }
+        }
+
+        /* ── Splash Screen ── */
+        .splash {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(180,0,0,0.6) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(100,0,0,0.8) 0%, transparent 60%),
+                linear-gradient(160deg, #6b0000 0%, #800000 40%, #5a0000 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        .splash.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .splash-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin-bottom: 36px;
+            box-shadow:
+                0 12px 40px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.3),
+                inset 0 -1px 0 rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,180,150,0.2);
+            animation: splashPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes splashPulse {
+            0%, 100% { transform: scale(1);   box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+            50%       { transform: scale(1.06); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+        }
+        .splash-title-top {
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: rgba(255, 220, 200, 0.65);
+            margin-bottom: 8px;
+            animation: splashFadeUp 0.8s ease both;
+            animation-delay: 0.1s;
+        }
+        .splash-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 280px;
+            margin: 8px 0;
+            animation: splashFadeUp 0.8s ease both;
+            animation-delay: 0.2s;
+        }
+        .splash-divider-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(255,200,180,0.5), transparent);
+        }
+        .splash-divider-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(255,200,180,0.8);
+        }
+        .splash-title-main {
+            font-family: 'Cinzel', serif;
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-align: center;
+            line-height: 1.3;
+            background: linear-gradient(135deg, #ffffff 0%, #ffcccc 40%, #ffffff 60%, #ffe0d0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+            animation: splashFadeUp 0.8s ease both;
+            animation-delay: 0.3s;
+        }
+        .splash-title-sub {
+            font-family: 'Cinzel', serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 7px;
+            color: rgba(255, 220, 200, 0.65);
+            margin-top: 8px;
+            animation: splashFadeUp 0.8s ease both;
+            animation-delay: 0.4s;
+        }
+        .splash-loader {
+            margin-top: 48px;
+            display: flex;
+            gap: 8px;
+            animation: splashFadeUp 0.8s ease both;
+            animation-delay: 0.5s;
+        }
+        .splash-loader-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,200,180,0.6);
+            animation: loaderBounce 1.2s ease-in-out infinite;
+        }
+        .splash-loader-dot:nth-child(2) { animation-delay: 0.2s; }
+        .splash-loader-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes loaderBounce {
+            0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+            40%           { transform: scale(1.2); opacity: 1; }
+        }
+        @keyframes splashFadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div class="splash" id="splash">
+    <div class="splash-icon">⊨</div>
+    <div class="splash-title-top">P &nbsp;·&nbsp; Q &nbsp;·&nbsp; R &nbsp;·&nbsp; S</div>
+    <div class="splash-divider">
+        <div class="splash-divider-line"></div>
+        <div class="splash-divider-dot"></div>
+        <div class="splash-divider-line"></div>
+    </div>
+    <div class="splash-title-main">Propositional<br>Logic Calculator</div>
+    <div class="splash-divider">
+        <div class="splash-divider-line"></div>
+        <div class="splash-divider-dot"></div>
+        <div class="splash-divider-line"></div>
+    </div>
+    <div class="splash-title-sub">∧ &nbsp; ∨ &nbsp; ¬ &nbsp; → &nbsp; ↔</div>
+    <div class="splash-loader">
+        <div class="splash-loader-dot"></div>
+        <div class="splash-loader-dot"></div>
+        <div class="splash-loader-dot"></div>
+    </div>
+</div>
+
+<div class="calculator">
+    <div class="display">
+        <span class="display-label">Expression</span>
+        <div class="display-input"  id="displayInput"></div>
+        <div class="display-result" id="displayResult"></div>
+    </div>
+
+    <div class="keypad">
+        <!-- Row 1: Variables -->
+        <button class="key key-var" onclick="appendVar('P')">P</button>
+        <button class="key key-var" onclick="appendVar('Q')">Q</button>
+        <button class="key key-var" onclick="appendVar('R')">R</button>
+        <button class="key key-var" onclick="appendVar('S')">S</button>
+
+        <!-- Row 2: Values & Parens -->
+        <button class="key key-value" onclick="appendVal('True')">T</button>
+        <button class="key key-value" onclick="appendVal('False')">F</button>
+        <button class="key key-value" onclick="appendVal('(')">(</button>
+        <button class="key key-value" onclick="appendVal(')')">)</button>
+
+        <!-- Row 3: NOT AND OR IF -->
+        <button class="key key-operator" onclick="appendOp('¬')">NOT</button>
+        <button class="key key-operator" onclick="appendOp('∧')">AND</button>
+        <button class="key key-operator" onclick="appendOp('∨')">OR</button>
+        <button class="key key-operator" onclick="appendOp('→')">IF</button>
+
+        <!-- Row 4: IFF C DEL = -->
+        <button class="key key-operator" onclick="appendOp('↔')">IFF</button>
+        <button class="key key-clear"    onclick="clearAll()">C</button>
+        <button class="key key-clear"    onclick="deleteLast()">DEL</button>
+        <button class="key key-equals"   onclick="calcResult()">=</button>
+
+        <!-- Row 5: Truth Table -->
+        <button class="key key-truth" onclick="openTruthTable()">⊨ GENERATE TRUTH TABLE</button>
+    </div>
+</div>
+
+<!-- Install Banner -->
+<div class="install-banner hidden" id="installBanner">
+    <span class="install-text">Add to Home Screen for offline use</span>
+    <button class="install-btn" id="installBtn">Install</button>
+    <button class="install-dismiss" id="installDismiss">&times;</button>
+</div>
+
+<!-- Truth Table Modal -->
+<div class="modal" id="truthModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Truth Table</h2>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div class="table-wrap">
+            <table class="truth-table">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  TOKENIZER
+// ═══════════════════════════════════════════════════════════════════
+function tokenize(expr) {
+    const tokens = [];
+    let i = 0;
+    while (i < expr.length) {
+        if (expr[i] === ' ') { i++; continue; }
+        if (expr.startsWith('True',  i)) { tokens.push('True');  i += 4; continue; }
+        if (expr.startsWith('False', i)) { tokens.push('False'); i += 5; continue; }
+        tokens.push(expr[i]);
+        i++;
+    }
+    return tokens;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RECURSIVE DESCENT EVALUATOR
+//  Precedence (lowest → highest): ↔  →  ∨  ∧  ¬  atom
+// ═══════════════════════════════════════════════════════════════════
+function evaluate(expr, vars) {
+    const tokens = tokenize(expr);
+    const result = evalIff(tokens, 0, vars);
+    if (result.pos !== tokens.length)
+        throw new Error('Unexpected token: "' + tokens[result.pos] + '"');
+    return result.val;
+}
+
+function evalIff(t, pos, v) {
+    let l = evalImpl(t, pos, v);
+    while (l.pos < t.length && t[l.pos] === '↔') {
+        const r = evalImpl(t, l.pos + 1, v);
+        l = { val: l.val === r.val, pos: r.pos };
+    }
+    return l;
+}
+function evalImpl(t, pos, v) {
+    const l = evalOr(t, pos, v);
+    if (l.pos < t.length && t[l.pos] === '→') {
+        const r = evalImpl(t, l.pos + 1, v);
+        return { val: (!l.val || r.val), pos: r.pos };
+    }
+    return l;
+}
+function evalOr(t, pos, v) {
+    let l = evalAnd(t, pos, v);
+    while (l.pos < t.length && t[l.pos] === '∨') {
+        const r = evalAnd(t, l.pos + 1, v);
+        l = { val: l.val || r.val, pos: r.pos };
+    }
+    return l;
+}
+function evalAnd(t, pos, v) {
+    let l = evalNot(t, pos, v);
+    while (l.pos < t.length && t[l.pos] === '∧') {
+        const r = evalNot(t, l.pos + 1, v);
+        l = { val: l.val && r.val, pos: r.pos };
+    }
+    return l;
+}
+function evalNot(t, pos, v) {
+    if (pos < t.length && t[pos] === '¬') {
+        const o = evalNot(t, pos + 1, v);
+        return { val: !o.val, pos: o.pos };
+    }
+    return evalAtom(t, pos, v);
+}
+function evalAtom(t, pos, v) {
+    if (pos >= t.length) throw new Error('Unexpected end of expression');
+    const tok = t[pos];
+    if (tok === '(') {
+        const inner = evalIff(t, pos + 1, v);
+        if (inner.pos >= t.length || t[inner.pos] !== ')') throw new Error('Missing closing parenthesis');
+        return { val: inner.val, pos: inner.pos + 1 };
+    }
+    if (tok === 'True')  return { val: true,  pos: pos + 1 };
+    if (tok === 'False') return { val: false, pos: pos + 1 };
+    if (Object.prototype.hasOwnProperty.call(v, tok)) return { val: v[tok], pos: pos + 1 };
+    throw new Error('Unknown token: "' + tok + '"');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SUB-EXPRESSION EXTRACTOR
+// ═══════════════════════════════════════════════════════════════════
+function extractSubExprs(expr) {
+    const list = [], seen = new Set();
+    function add(s) { if (s && !seen.has(s)) { seen.add(s); list.push(s); } }
+    subIff(tokenize(expr), 0, add);
+    return list.filter(s => !['P','Q','R','S','True','False'].includes(s));
+}
+function subIff(t, pos, add) {
+    let l = subImpl(t, pos, add);
+    while (l.pos < t.length && t[l.pos] === '↔') {
+        const r = subImpl(t, l.pos + 1, add);
+        const s = l.expr + '↔' + r.expr; add(s);
+        l = { expr: s, pos: r.pos };
+    }
+    return l;
+}
+function subImpl(t, pos, add) {
+    const l = subOr(t, pos, add);
+    if (l.pos < t.length && t[l.pos] === '→') {
+        const r = subImpl(t, l.pos + 1, add);
+        const s = l.expr + '→' + r.expr; add(s);
+        return { expr: s, pos: r.pos };
+    }
+    return l;
+}
+function subOr(t, pos, add) {
+    let l = subAnd(t, pos, add);
+    while (l.pos < t.length && t[l.pos] === '∨') {
+        const r = subAnd(t, l.pos + 1, add);
+        const s = l.expr + '∨' + r.expr; add(s);
+        l = { expr: s, pos: r.pos };
+    }
+    return l;
+}
+function subAnd(t, pos, add) {
+    let l = subNot(t, pos, add);
+    while (l.pos < t.length && t[l.pos] === '∧') {
+        const r = subNot(t, l.pos + 1, add);
+        const s = l.expr + '∧' + r.expr; add(s);
+        l = { expr: s, pos: r.pos };
+    }
+    return l;
+}
+function subNot(t, pos, add) {
+    if (pos < t.length && t[pos] === '¬') {
+        const o = subNot(t, pos + 1, add);
+        const s = '¬' + o.expr; add(s);
+        return { expr: s, pos: o.pos };
+    }
+    return subAtom(t, pos, add);
+}
+function subAtom(t, pos, add) {
+    if (pos >= t.length) return { expr: '', pos };
+    const tok = t[pos];
+    if (tok === '(') {
+        let depth = 1, end = pos + 1;
+        while (end < t.length && depth > 0) {
+            if (t[end] === '(') depth++; else if (t[end] === ')') depth--;
+            end++;
+        }
+        const inner = t.slice(pos + 1, end - 1);
+        subIff(inner, 0, add);
+        return { expr: '(' + inner.join('') + ')', pos: end };
+    }
+    return { expr: tok, pos: pos + 1 };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function detectVars(expr) {
+    return ['P','Q','R','S'].filter(v => new RegExp('\\b' + v + '\\b').test(expr));
+}
+function showError(msg) {
+    const el = document.getElementById('displayResult');
+    el.textContent = msg;
+    el.style.color = '#ff6666';
+}
+function resetResult() {
+    const el = document.getElementById('displayResult');
+    el.textContent = '';
+    el.style.color = '#ffffff';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  KEYPAD ACTIONS
+// ═══════════════════════════════════════════════════════════════════
+function appendVar(v)  { document.getElementById('displayInput').textContent += v;  resetResult(); }
+function appendVal(v)  { document.getElementById('displayInput').textContent += v;  resetResult(); }
+function appendOp(op)  { document.getElementById('displayInput').textContent += op; resetResult(); }
+
+function clearAll() {
+    document.getElementById('displayInput').textContent = '';
+    resetResult();
+}
+function deleteLast() {
+    const el = document.getElementById('displayInput');
+    const t  = el.textContent;
+    if      (t.endsWith('True'))  el.textContent = t.slice(0, -4);
+    else if (t.endsWith('False')) el.textContent = t.slice(0, -5);
+    else                          el.textContent = t.slice(0, -1);
+    resetResult();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  EVALUATE (= button)
+// ═══════════════════════════════════════════════════════════════════
+function calcResult() {
+    const expr = document.getElementById('displayInput').textContent.trim();
+    const el   = document.getElementById('displayResult');
+    if (!expr) { showError('Empty input'); return; }
+    if (detectVars(expr).length > 0) {
+        el.textContent = 'Use Generate Truth Table for variables';
+        el.style.color = '#ffaa44';
+        return;
+    }
+    try {
+        const result = evaluate(expr, {});
+        el.textContent = result ? 'True' : 'False';
+        el.style.color  = result ? '#66ff99' : '#ff6666';
+    } catch(e) {
+        showError('Error: ' + e.message);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  TRUTH TABLE
+// ═══════════════════════════════════════════════════════════════════
+function openTruthTable() {
+    const expr = document.getElementById('displayInput').textContent.trim();
+    if (!expr) { showError('Empty input'); return; }
+
+    let subExprs;
+    try { subExprs = extractSubExprs(expr); }
+    catch(e) { showError('Error: ' + e.message); return; }
+
+    if (subExprs.length === 0) subExprs = [expr];
+
+    const vars = detectVars(expr);
+    const rows = [];
+
+    if (vars.length === 0) {
+        try { rows.push({ assignment: {}, colResults: subExprs.map(s => evaluate(s, {})) }); }
+        catch(e) { showError('Error: ' + e.message); return; }
+    } else {
+        const numRows = Math.pow(2, vars.length);
+        for (let i = 0; i < numRows; i++) {
+            const assignment = {};
+            for (let j = 0; j < vars.length; j++)
+                assignment[vars[j]] = !Boolean((i >> (vars.length - 1 - j)) & 1);
+            try { rows.push({ assignment, colResults: subExprs.map(s => evaluate(s, assignment)) }); }
+            catch(e) { showError('Error: ' + e.message); return; }
+        }
+    }
+
+    renderTable(expr, vars, subExprs, rows);
+    document.getElementById('truthModal').style.display = 'flex';
+}
+
+function renderTable(expr, vars, subExprs, rows) {
+    document.getElementById('modalTitle').textContent = expr;
+    const thead = document.getElementById('tableHead');
+    const tbody = document.getElementById('tableBody');
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    const hr = document.createElement('tr');
+    vars.forEach(v => {
+        const th = document.createElement('th');
+        th.textContent = v;
+        hr.appendChild(th);
+    });
+    subExprs.forEach((s, i) => {
+        const th = document.createElement('th');
+        th.textContent = s;
+        if (i === subExprs.length - 1) th.className = 'final-col-th';
+        hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+
+    rows.forEach(({ assignment, colResults }) => {
+        const tr = document.createElement('tr');
+        vars.forEach(v => {
+            const td = document.createElement('td');
+            td.textContent = assignment[v] ? 'T' : 'F';
+            td.className   = assignment[v] ? 'cell-t' : 'cell-f';
+            tr.appendChild(td);
+        });
+        colResults.forEach((val, i) => {
+            const td = document.createElement('td');
+            td.textContent = val ? 'T' : 'F';
+            td.className   = (val ? 'cell-t' : 'cell-f') + (i === colResults.length - 1 ? ' final-col-td' : '');
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════════════════════════════
+function closeModal() {
+    document.getElementById('truthModal').style.display = 'none';
+}
+document.getElementById('truthModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', function(e) {
+    const k = e.key;
+    if      (k === 'p' || k === 'P') appendVar('P');
+    else if (k === 'q' || k === 'Q') appendVar('Q');
+    else if (k === 'r' || k === 'R') appendVar('R');
+    else if (k === 's' || k === 'S') appendVar('S');
+    else if (k === '(') appendVal('(');
+    else if (k === ')') appendVal(')');
+    else if (k === '!') appendOp('¬');
+    else if (k === '&') appendOp('∧');
+    else if (k === '|') appendOp('∨');
+    else if (k === '>') appendOp('→');
+    else if (k === 'Enter' || k === '=') { e.preventDefault(); calcResult(); }
+    else if (k === 'Backspace') deleteLast();
+    else if (k === 'Delete' || k === 'Escape') clearAll();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  PWA: SERVICE WORKER + INSTALL PROMPT
+// ═══════════════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('installBanner');
+    banner.classList.remove('hidden');
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('installBanner').classList.add('hidden');
+});
+
+document.getElementById('installDismiss').addEventListener('click', () => {
+    document.getElementById('installBanner').classList.add('hidden');
+});
+
+window.addEventListener('appinstalled', () => {
+    document.getElementById('installBanner').classList.add('hidden');
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  SPLASH SCREEN
+// ═══════════════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        document.getElementById('splash').classList.add('hidden');
+    }, 2500);
+});
+</script>
+</body>
+</html>
